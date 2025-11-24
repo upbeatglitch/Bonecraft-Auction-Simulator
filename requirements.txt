@@ -1,4 +1,4 @@
 Flask
 requests
 firebase-admin  # If you are using firebase-admin in a more complex setup. 
-                # If you are only using the 'requests' library to talk to Firebase's REST API, you may not need this.
+gunicorn                # If you are only using the 'requests' library to talk to Firebase's REST API, you may not need this.
