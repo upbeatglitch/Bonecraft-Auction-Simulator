@@ -22,6 +22,10 @@ app = Flask(__name__)
 # Set a secret key for session management (CHANGE THIS!)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "a_very_secret_key_for_bonecraft_sim")
 
+app.config['SESSION_COOKIE_SECURE'] = True        # Must be True for production/HTTPS
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'    # Allows cookies to be sent cross-site (required for iFrames)
+app.config['SESSION_COOKIE_DOMAIN'] = None
+
 # Comprehensive Bonecraft recipes (Same as original)
 BONECRAFT_RECIPES = [
     # Tier 5 (Amateur - Skill 1-10)
