@@ -3,429 +3,748 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bonecraft Sim (Cloud)</title>
+    <title>Bonecraft Online - Web Sim</title>
     <style>
-        /* Reverted CSS to the simpler, "older" version's styling */
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #333; color: #eee; margin: 0; padding: 20px; }
-        .container { max-width: 1200px; margin: auto; background-color: #444; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
-        h1, h2, h3 { color: #8af; border-bottom: 2px solid #555; padding-bottom: 5px; margin-top: 20px; }
-        .section { margin-bottom: 30px; padding: 15px; border: 1px solid #555; border-radius: 4px; background-color: #555; }
-        input[type="text"], input[type="password"], input[type="number"], select { padding: 10px; margin: 5px 0; border: 1px solid #777; border-radius: 4px; background-color: #666; color: #fff; width: calc(100% - 22px); box-sizing: border-box; }
-        button { background-color: #8af; color: #111; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px; font-weight: bold; transition: background-color 0.2s; }
-        button:hover { background-color: #bdf; }
-        .button-group button { margin-right: 10px; width: auto; }
-        .alert { padding: 10px; margin-bottom: 15px; border-radius: 4px; }
-        .alert-success { background-color: #4CAF50; color: white; }
-        .alert-error { background-color: #f44336; color: white; }
-        .player-info { display: flex; justify-content: space-around; background-color: #666; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
-        .player-info div { text-align: center; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 10px; border: 1px solid #666; text-align: left; }
-        th { background-color: #777; color: #111; }
-        td:nth-child(2), td:nth-child(3) { text-align: right; } /* Price and Qty columns */
-        .market-action { width: 100px; text-align: center; } /* For the Buy button column */
+        :root {
+            --bg: #1e1e1e;
+            --panel: #2d2d2d;
+            --text: #e0e0e0;
+            --accent: #4a90e2;
+            --accent-hover: #357abd;
+            --success: #4caf50;
+            --danger: #f44336;
+            --border: #404040;
+        }
 
-        .recipe-list { max-height: 400px; overflow-y: auto; }
-        .recipe-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dotted #666; }
-        .recipe-details { flex-grow: 1; }
-        .recipe-synth-button { margin-left: 10px; width: 80px; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 1000px;
+            max-width: 95%;
+            margin-top: 20px;
+        }
+
+        /* --- Global Elements --- */
+        .panel {
+            background-color: var(--panel);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        h2 {
+            color: var(--accent);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 5px;
+            margin-top: 0;
+        }
+
+        button, .list-btn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button:hover, .list-btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0 15px 0;
+            box-sizing: border-box;
+            border: 1px solid var(--border);
+            background-color: var(--input-bg, #3d3d3d);
+            color: var(--text);
+            border-radius: 4px;
+        }
+
+        .flex-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .flex-row > * { flex-grow: 1; }
+
+        /* --- Top Bar --- */
+        #top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: var(--panel);
+        }
+        #top-bar .stat {
+            font-size: 1.2em;
+            color: var(--success);
+            font-family: 'Consolas', monospace;
+        }
+
+        /* --- Main Layout --- */
+        #main-app {
+            display: none; /* Hidden until login */
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 20px;
+        }
+
+        /* --- Tables (Replicating Treeview) --- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background-color: var(--border);
+            color: white;
+        }
+        tr:hover {
+            background-color: #383838;
+        }
+        tr.selected {
+            background-color: var(--accent);
+        }
+        /* REMOVED cursor: pointer for #ah-table tbody tr since selection is no longer required for buying */
+        #inv-table tbody tr { cursor: pointer; } 
+        /* ADDED style for the action button column */
+        #ah-table th:last-child { width: 100px; text-align: center; }
+        #ah-table td:last-child { text-align: center; }
+
+        /* --- Auction House Log --- */
+        #ah-log {
+            height: 100px;
+            background-color: #222;
+            color: #aaa;
+            padding: 10px;
+            overflow-y: auto;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.8em;
+        }
+        .log-message {
+            margin-bottom: 2px;
+        }
+
+        /* --- Modal (Listing Dialog) --- */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8);
+            display: none;
+        }
+        .modal-content {
+            background-color: var(--panel);
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid var(--border);
+            width: 300px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        /* --- Synth Result & Status --- */
+        #result-label {
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1em;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .text-success { color: var(--success); }
+        .text-danger { color: var(--danger); }
+        .text-normal { color: var(--text); }
+
     </style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0299695600686963"
+      crossorigin="anonymous"></script>
 </head>
 <body>
 
 <div class="container">
-    <h1>🦴 Bonecraft Simulator (Cloud)</h1>
-    <p id="statusMessage" class="alert"></p>
+    <div id="ad-unit-top" style="margin-bottom: 20px;">
+        <ins class="adsbygoogle"
+            style="display:block"
+            data-ad-client="ca-pub-0299695600686963"
+            data-ad-slot="5288460043"
+            data-ad-format="auto"
+            data-full-width-responsive="true"></ins>
+        <script>
+            (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+    </div>
+    
+    <div id="login-screen" class="panel">
+        <h2 style="text-align: center;">BONECRAFT ONLINE</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <div class="flex-row">
+            <button onclick="handleLogin()">LOGIN</button>
+            <button onclick="handleRegister()" style="background-color: #444;">CREATE ACCOUNT</button>
+        </div>
+        <p id="auth-status" style="text-align: center; color: var(--text);"></p>
+    </div>
 
-    <div id="authSection" class="section">
-        <h2>Account</h2>
-        <input type="text" id="authUsername" placeholder="Username" required>
-        <input type="password" id="authPassword" placeholder="Password" required>
-        <div class="button-group">
-            <button onclick="handleRegister()">Register</button>
-            <button onclick="handleLogin()">Login</button>
+    <div id="main-app">
+        
+        <div id="top-bar" class="panel" style="grid-column: 1 / 3; margin-bottom: 0;">
+            <div class="stat" id="gil-label">Gil: 0</div>
+            <div class="stat" id="synth-count-label">Total Synths: 0</div>
+            <button onclick="handleLogout()" style="width: auto; background-color: var(--danger);">LOGOUT</button>
+        </div>
+
+        <div class="panel">
+            <h2>Synthesis Studio</h2>
+            <select id="recipe-select"></select>
+            <button onclick="handleSynth()">Synthesize Item</button>
+            <div id="result-label" class="text-normal">Ready to craft...</div>
+
+            <hr style="border-color: var(--border); margin: 20px 0;">
+
+            <h2>Your Inventory</h2>
+            <table id="inv-table">
+                <thead><tr><th>Item</th><th>Qty</th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <button id="list-item-btn" onclick="openListingModal()" style="margin-top: 10px;" disabled>List Selected on Auction House</button>
+        </div>
+
+        <div class="panel">
+            <div id="tabs">
+                <button onclick="showTab('ah')" style="width: 50%;">Auction House</button>
+                <button onclick="showTab('lb')" style="width: 50%; background-color: #444;">Leaderboard</button>
+            </div>
+
+            <div id="ah-tab" style="margin-top: 10px;">
+                <h2>Auction House</h2>
+                <table id="ah-table">
+                    <thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Seller</th><th>Action</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <div id="ah-log"></div>
+            </div>
+
+            <div id="lb-tab" style="margin-top: 10px; display: none;">
+                <h2>Global Leaderboard</h2>
+                <table id="lb-table">
+                    <thead><tr><th>#</th><th>Player Name</th><th>Synths</th><th>Gil</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <button onclick="syncLeaderboard()" style="margin-top: 10px;">Refresh Leaderboard</button>
+            </div>
         </div>
     </div>
 
-    <div id="gameSection" style="display: none;">
-        <div class="player-info section">
-            <div>Username: <span id="playerUsername"></span></div>
-            <div>Gil: <span id="playerGil"></span></div>
-            <div>Total Synths: <span id="playerSynths"></span></div>
-            <button onclick="handleLogout()">Logout</button>
-        </div>
+</div>
 
-        <div class="section">
-            <h2>Crafting Bench</h2>
-            <div id="recipeList" class="recipe-list">
-                <p>Loading recipes...</p>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2>Your Inventory & Listing</h2>
-            <div id="inventoryList">
-                <p>Loading inventory...</p>
-            </div>
-            
-            <h3>List Item on Auction House (AH)</h3>
-            <select id="listItemSelect">
-                <option value="" disabled selected>Select Item</option>
-            </select>
-            <input type="number" id="listPrice" placeholder="Total Price (Gil)" min="1" value="1000">
-            <input type="number" id="listQty" placeholder="Quantity" min="1" value="1">
-            <button onclick="handleListItem()">List Item</button>
-        </div>
+<div id="listing-modal" class="modal">
+    <div class="modal-content">
+        <h3>List Item on AH</h3>
+        <p id="listing-item-name" style="font-weight: bold;"></p>
         
-        <div class="section">
-            <h2>Auction House (AH)</h2>
-            <button onclick="refreshMarket()">Refresh Market</button>
-            <table id="marketTable">
-                <thead>
-                    <tr>
-                        <th>Item</th>
-                        <th style="text-align: right;">Price</th>
-                        <th style="text-align: right;">Qty</th>
-                        <th>Seller</th>
-                        <th class="market-action">Action</th> </tr>
-                </thead>
-                <tbody id="marketListings">
-                    </tbody>
-            </table>
+        <label>Quantity:</label>
+        <select id="listing-qty-select" onchange="updateListingPrice()"></select>
+        
+        <label>Suggested Unit Price (Gil): <span id="suggested-unit-price"></span></label>
+        
+        <label>Total Price for Stack:</label>
+        <input type="number" id="listing-price-input" placeholder="Total Price" min="1">
+        
+        <div class="flex-row">
+            <button onclick="confirmListing()">List</button>
+            <button onclick="closeListingModal()" style="background-color: #555;">Cancel</button>
         </div>
-
-        <div class="section">
-            <h2>Leaderboard</h2>
-            <button onclick="displayLeaderboard()">Refresh Leaderboard</button>
-            <table id="leaderboardTable">
-                <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Player</th>
-                        <th style="text-align: right;">Gil</th>
-                        <th style="text-align: right;">Synths</th>
-                    </tr>
-                </thead>
-                <tbody id="leaderboardList">
-                    </tbody>
-            </table>
-        </div>
+        <p id="listing-status" style="color: var(--text);"></p>
     </div>
 </div>
 
 <script>
-    let player = null;
-    let recipes = [];
-    const statusMessage = document.getElementById('statusMessage');
+// Global state variables
+let player = null;
+let recipes = [];
+let listings = []; // Used to store current market data
+let selectedInventoryItem = null; // for listing
+// REMOVED: let selectedAHListing = null; // No longer needed for quick buy
+let defaultUnitPrices = {}; // Caching unit prices for materials/recipes
 
-    // =================================
-    // UTILITY FUNCTIONS
-    // =================================
+// --- Utility Functions ---
 
-    function formatGil(amount) {
-        return amount.toLocaleString() + 'g';
+function fetchAPI(endpoint, method = 'GET', data = null) {
+    const options = {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    };
+    if (data) {
+        options.body = JSON.stringify(data);
     }
+    return fetch(`/api/${endpoint}`, options)
+        .then(response => response.json());
+}
 
-    function setStatus(message, isError = false) {
-        statusMessage.textContent = message;
-        statusMessage.className = isError ? 'alert alert-error' : 'alert alert-success';
-        if (!message) statusMessage.style.display = 'none';
-        else statusMessage.style.display = 'block';
+function logMessage(msg) {
+    const log = document.getElementById('ah-log');
+    const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const p = document.createElement('p');
+    p.classList.add('log-message');
+    p.textContent = `[${time}] ${msg}`;
+    log.prepend(p);
+    // Keep log short
+    if (log.children.length > 20) {
+        log.lastChild.remove();
     }
+}
 
-    // =================================
-    // AUTHENTICATION HANDLERS
-    // =================================
+function formatGil(amount) {
+    return new Intl.NumberFormat('en-US').format(amount);
+}
 
-    async function handleRegister() {
-        const username = document.getElementById('authUsername').value;
-        const password = document.getElementById('authPassword').value;
-
-        const response = await fetch('/api/auth/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
-        });
-        const data = await response.json();
-        
-        setStatus(data.message, !data.success);
-    }
-
-    async function handleLogin() {
-        const username = document.getElementById('authUsername').value;
-        const password = document.getElementById('authPassword').value;
-
-        const response = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
-        });
-        const data = await response.json();
-        
-        setStatus(data.message, !data.success);
-        if (data.success) {
-            document.getElementById('authSection').style.display = 'none';
-            document.getElementById('gameSection').style.display = 'block';
-            document.getElementById('playerUsername').textContent = data.username;
-            await syncPlayerData();
+function getBasePrice(itemName) {
+    // Check recipes (crafted items)
+    for (const r of recipes) {
+        if (itemName.includes(r.name)) {
+            let price = r.price;
+            if (itemName.includes("HQ")) price *= 3; 
+            return price;
         }
     }
-
-    async function handleLogout() {
-        await fetch('/api/auth/logout', { method: 'POST' });
-        player = null;
-        document.getElementById('authSection').style.display = 'block';
-        document.getElementById('gameSection').style.display = 'none';
-        setStatus("Logged out successfully.");
-    }
-
-    // =================================
-    // GAME & DATA SYNC
-    // =================================
+    // Check materials (same logic as app.py)
+    if (defaultUnitPrices[itemName]) return defaultUnitPrices[itemName];
     
-    async function syncPlayerData() {
-        const response = await fetch('/api/game/sync');
-        const data = await response.json();
+    return 100; // Default low price
+}
 
-        if (data.success) {
-            player = data.player;
-            recipes = data.recipes;
-            displayPlayerInfo();
-            displayInventory();
-            displayRecipes();
-            refreshMarket(); // Initial market refresh
-            displayLeaderboard(); // Initial leaderboard load
-        } else {
-            // Handle not authenticated (e.g., session expired)
-            handleLogout();
-        }
-    }
 
-    function displayPlayerInfo() {
-        if (!player) return;
-        document.getElementById('playerGil').textContent = formatGil(player.gil);
-        document.getElementById('playerSynths').textContent = player.total_synths.toLocaleString();
-    }
-    
-    function displayInventory() {
-        if (!player) return;
-        const inventoryDiv = document.getElementById('inventoryList');
-        const listSelect = document.getElementById('listItemSelect');
-        inventoryDiv.innerHTML = '';
-        listSelect.innerHTML = '<option value="" disabled selected>Select Item</option>';
-        
-        let html = '<ul>';
-        for (const [item, qty] of Object.entries(player.inventory).sort()) {
-            html += `<li>${item}: ${qty.toLocaleString()}</li>`;
-            // Only allow listing items the player actually has in inventory
-            if (qty > 0) {
-                listSelect.innerHTML += `<option value="${item}">${item} (${qty.toLocaleString()} available)</option>`;
+// --- UI Initialization and Toggle ---
+
+function checkAuth() {
+    // Check if a session cookie exists (by trying to sync)
+    fetchAPI('game/sync')
+        .then(data => {
+            if (data.success) {
+                player = data.player;
+                recipes = data.recipes;
+                recipes.forEach(r => {
+                    // Populate suggested prices cache
+                    defaultUnitPrices[r.name] = r.price;
+                    defaultUnitPrices[`HQ ${r.name} (+1)`] = r.price * 3;
+                });
+                
+                // Material prices (from app.py logic)
+                defaultUnitPrices["Bone Chip"] = 100; defaultUnitPrices["Seashell"] = 100;
+                defaultUnitPrices["Chicken Bone"] = 500; defaultUnitPrices["Sheep Tooth"] = 500; defaultUnitPrices["Giant Femur"] = 500;
+                defaultUnitPrices["Beetle Shell"] = 1500; defaultUnitPrices["Beetle Jaw"] = 1500; defaultUnitPrices["Ram Horn"] = 1500;
+                defaultUnitPrices["Turtle Shell"] = 3000; defaultUnitPrices["Scorpion Shell"] = 3000;
+                defaultUnitPrices["Demon Horn"] = 8000; defaultUnitPrices["Black Tiger Fang"] = 8000; defaultUnitPrices["Coral Fragment"] = 8000;
+                defaultUnitPrices["Wyvern Scales"] = 25000; defaultUnitPrices["Titanictus Shell"] = 25000; defaultUnitPrices["Gavial Fish"] = 25000;
+
+                document.getElementById('login-screen').style.display = 'none';
+                // CHANGED: Use grid display style
+                document.getElementById('main-app').style.display = 'grid'; 
+                initUI();
+            } else {
+                document.getElementById('login-screen').style.display = 'block';
+                document.getElementById('main-app').style.display = 'none';
             }
-        }
-        html += '</ul>';
-        inventoryDiv.innerHTML = html;
-    }
-
-    function displayRecipes() {
-        const recipeList = document.getElementById('recipeList');
-        recipeList.innerHTML = '';
-        
-        for (const recipe of recipes.sort((a, b) => b.tier - a.tier)) {
-            const hasMaterial = player.inventory[recipe.material] >= recipe.qty;
-            // Assuming 10% recipe price is the synth fee
-            const canAfford = player.gil >= recipe.price * 0.1; 
-            
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'recipe-item';
-            
-            itemDiv.innerHTML = `
-                <div class="recipe-details">
-                    <strong>${recipe.name}</strong> (T${recipe.tier})<br>
-                    Cost: ${formatGil(recipe.price * 0.1)} Fee | Mat: ${recipe.qty}x ${recipe.material}
-                </div>
-                <button class="recipe-synth-button" 
-                        onclick="handleSynth('${recipe.name}')" 
-                        ${(!hasMaterial || !canAfford) ? 'disabled' : ''}>
-                    Synth
-                </button>
-            `;
-            recipeList.appendChild(itemDiv);
-        }
-    }
-
-    async function handleSynth(recipeName) {
-        if (!player) return;
-        
-        const response = await fetch('/api/game/synth', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ recipe_name: recipeName })
+        })
+        .catch(() => {
+            // Assume offline or server down
+            document.getElementById('auth-status').textContent = 'Server connection error.';
         });
-        const data = await response.json();
-        
-        setStatus(data.message, data.result === 'BREAK' || !data.success);
-        
-        if (data.success) {
-            player = data.player;
-            displayPlayerInfo();
-            displayInventory();
-            displayRecipes(); // Update button states
-        }
-    }
+}
 
-    // =================================
-    // AUCTION HOUSE HANDLERS
-    // =================================
+function initUI() {
+    // 1. Populate Recipe Select
+    const select = document.getElementById('recipe-select');
+    select.innerHTML = '';
+    recipes.forEach(r => {
+        const option = document.createElement('option');
+        option.value = r.name;
+        option.textContent = `${r.name} (Material: ${r.material} x${r.qty})`;
+        select.appendChild(option);
+    });
+
+    // 2. Initial Sync
+    syncAll();
+
+    // 3. Set up automatic sync
+    setInterval(syncMarketAndLeaderboard, 10000); // Sync AH and LB every 10s
     
-    async function refreshMarket() {
-        const response = await fetch('/api/ah/market');
-        const data = await response.json();
-        
-        if (data.success) {
-            displayMarketListings(data.listings);
-        } else {
-            setStatus("Failed to load market listings.", true);
+    // 4. Set up event listeners for table selection
+    // REMOVED: document.getElementById('ah-table').addEventListener('click', selectRow);
+    document.getElementById('inv-table').addEventListener('click', selectRow);
+}
+
+function selectRow(event) {
+    const table = event.currentTarget;
+    const isAH = table.id === 'ah-table';
+    let row = event.target.closest('tr');
+
+    if (!row || row.tagName === 'THEAD') return;
+
+    // Clear previous selection
+    table.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
+    
+    // Select new row
+    row.classList.add('selected');
+
+    if (isAH) {
+        // REMOVED AH selection logic (selectedAHListing)
+    } else {
+        selectedInventoryItem = row.dataset.item;
+        document.getElementById('list-item-btn').disabled = !selectedInventoryItem;
+    }
+}
+
+function showTab(tab) {
+    document.getElementById('ah-tab').style.display = tab === 'ah' ? 'block' : 'none';
+    document.getElementById('lb-tab').style.display = tab === 'lb' ? 'block' : 'none';
+    // Update button visual state if needed
+}
+
+// --- Sync Functions ---
+
+function syncAll() {	
+    syncPlayerData(player); // <-- FIX: Pass the dictionary directly	
+    syncMarket();	
+    syncLeaderboard();	
+}
+
+function syncPlayerData(data) {
+    player = data;
+    document.getElementById('gil-label').textContent = `Gil: ${formatGil(player.gil)}`;
+    document.getElementById('synth-count-label').textContent = `Total Synths: ${player.total_synths}`;
+    
+    const invBody = document.getElementById('inv-table').querySelector('tbody');
+    invBody.innerHTML = '';
+    selectedInventoryItem = null;
+    document.getElementById('list-item-btn').disabled = true;
+
+    for (const item in player.inventory) {
+        if (player.inventory[item] > 0) {
+            const row = invBody.insertRow();
+            row.dataset.item = item;
+            row.insertCell().textContent = item;
+            row.insertCell().textContent = player.inventory[item];
         }
     }
+}
 
-    function displayMarketListings(listings) {
-        const marketBody = document.getElementById('marketListings');
-        marketBody.innerHTML = '';
+function syncMarket() {
+    fetchAPI('ah/market')
+        .then(data => {
+            if (data.success) {
+                listings = data.listings;
+                const ahBody = document.getElementById('ah-table').querySelector('tbody');
+                ahBody.innerHTML = '';
+                // REMOVED: selectedAHListing = null; // No longer needed
+                
+                // NO BUY BUTTON - the logic for buying is now per-row
+                
+                data.listings.forEach(l => {
+                    const row = ahBody.insertRow();
+                    const isOwnListing = l.seller === player.name;
+                    const canAfford = player.gil >= l.price;
+                    const isDisabled = isOwnListing || !canAfford;
 
-        if (listings.length === 0) {
-            marketBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No items currently listed.</td></tr>';
-            return;
-        }
+                    row.dataset.id = l.id;
+                    row.insertCell().textContent = l.item;
+                    row.insertCell().textContent = l.qty;
+                    row.insertCell().textContent = formatGil(l.price);
+                    row.insertCell().textContent = l.seller;
+                    
+                    // MODIFIED: Replaced Time column with Action button
+                    const actionCell = row.insertCell();
+                    actionCell.style.padding = '5px 10px'; // Tighten padding for button
+                    
+                    // Create the Buy Button
+                    const button = document.createElement('button');
+                    button.textContent = 'Buy';
+                    button.style.width = '100%';
+                    button.style.margin = '0';
+                    button.style.padding = '5px 8px';
+                    button.style.fontSize = '0.9em';
+                    button.onclick = () => handleQuickBuy(l.id, l.price);
+                    
+                    if (isDisabled) {
+                        button.disabled = true;
+                        if (isOwnListing) {
+                            button.textContent = 'Yours';
+                            button.style.backgroundColor = '#555'; // Gray out own button
+                        } else if (!canAfford) {
+                            button.textContent = 'Too Costly';
+                            button.style.backgroundColor = '#555'; // Gray out unaffordable button
+                        }
+                    }
 
-        for (const listing of listings) {
-            const row = marketBody.insertRow();
-            const unitPrice = listing.price / listing.qty;
-            
-            row.innerHTML = `
-                <td>${listing.item}</td>
-                <td style="text-align: right;">${formatGil(listing.price)} (${formatGil(unitPrice)}/ea)</td>
-                <td style="text-align: right;">${listing.qty.toLocaleString()}</td>
-                <td>${listing.seller}</td>
-                <td class="market-action">
-                    <button onclick="handleBuyItem('${listing.id}', ${listing.price})" 
-                            ${player && (player.gil < listing.price || listing.seller === player.username) ? 'disabled' : ''}>
-                        Buy
-                    </button>
-                </td>
-            `;
-        }
-    }
+                    actionCell.appendChild(button);
 
-    async function handleBuyItem(listingId, price) {
-        if (!player) {
-            setStatus("You must be logged in to buy items.", true);
-            return;
-        }
-        if (player.gil < price) {
-            setStatus("You do not have enough Gil for this purchase.", true);
-            return;
-        }
-
-        const response = await fetch('/api/ah/buy', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ listing_id: listingId })
-        });
-        const data = await response.json();
-
-        if (data.success) {
-            setStatus(data.message);
-            player = data.player;
-            displayPlayerInfo();
-            displayInventory();
-            refreshMarket(); // Refresh market to remove the sold item
-        } else {
-            setStatus("Purchase failed: " + data.message, true);
-            refreshMarket(); // Refresh market in case the item was sold to someone else
-        }
-    }
-
-    async function handleListItem() {
-        if (!player) return;
-
-        const item_name = document.getElementById('listItemSelect').value;
-        const price = parseInt(document.getElementById('listPrice').value);
-        const qty = parseInt(document.getElementById('listQty').value);
-
-        if (!item_name || isNaN(price) || price <= 0 || isNaN(qty) || qty <= 0) {
-            setStatus("Please provide valid item, price, and quantity.", true);
-            return;
-        }
-
-        const response = await fetch('/api/ah/list', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ item: item_name, price: price, qty: qty })
-        });
-        const data = await response.json();
-
-        setStatus(data.message, !data.success);
-
-        if (data.success) {
-            // Need to re-sync player data to update inventory correctly after listing
-            await syncPlayerData();
-            refreshMarket();
-        }
-    }
-
-    // =================================
-    // LEADERBOARD HANDLERS
-    // =================================
-
-    async function displayLeaderboard() {
-        const response = await fetch('/api/game/leaderboard');
-        const data = await response.json();
-
-        const leaderboardBody = document.getElementById('leaderboardList');
-        leaderboardBody.innerHTML = '';
-
-        if (data.success) {
-            if (data.leaderboard.length === 0) {
-                leaderboardBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No player data available.</td></tr>';
-                return;
+                    if (isOwnListing) {
+                        row.style.backgroundColor = 'rgba(74, 144, 226, 0.2)'; // Highlight own listing
+                    }
+                });
             }
+        });
+}
 
-            data.leaderboard.forEach((entry, index) => {
-                const row = leaderboardBody.insertRow();
-                row.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td>${entry.name}</td>
-                    <td style="text-align: right;">${formatGil(entry.gil)}</td>
-                    <td style="text-align: right;">${entry.synths.toLocaleString()}</td>
-                `;
-            });
-        }
+function syncLeaderboard() {
+    fetchAPI('game/leaderboard')
+        .then(data => {
+            if (data.success) {
+                const lbBody = document.getElementById('lb-table').querySelector('tbody');
+                lbBody.innerHTML = '';
+
+                data.leaderboard.forEach((p, index) => {
+                    const row = lbBody.insertRow();
+                    row.insertCell().textContent = index + 1;
+                    row.insertCell().textContent = p.name;
+                    row.insertCell().textContent = formatGil(p.synths);
+                    row.insertCell().textContent = formatGil(p.gil);
+                    if (p.name === player.name) {
+                        row.style.color = 'var(--accent)';
+                        row.style.fontWeight = 'bold';
+                    }
+                });
+            }
+        });
+}
+
+function syncMarketAndLeaderboard() {
+    syncMarket();
+    syncLeaderboard();
+}
+
+// --- Auth Handlers ---
+
+function handleLogin() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const status = document.getElementById('auth-status');
+    status.textContent = 'Logging in...';
+
+    fetchAPI('auth/login', 'POST', { username, password })
+        .then(data => {
+            if (data.success) {
+                status.textContent = data.message;
+                checkAuth();
+            } else {
+                status.textContent = data.message;
+            }
+        });
+}
+
+function handleRegister() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const status = document.getElementById('auth-status');
+    status.textContent = 'Creating account...';
+
+    fetchAPI('auth/register', 'POST', { username, password })
+        .then(data => {
+            status.textContent = data.message;
+            if (data.success) {
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+                status.style.color = 'var(--success)';
+            } else {
+                status.style.color = 'var(--danger)';
+            }
+        });
+}
+
+function handleLogout() {
+    fetchAPI('auth/logout', 'POST').then(() => {
+        window.location.reload();
+    });
+}
+
+// --- Game Handlers ---
+
+function handleSynth() {
+    const recipeName = document.getElementById('recipe-select').value;
+    const resultLabel = document.getElementById('result-label');
+    resultLabel.textContent = 'Synthesizing...';
+    resultLabel.className = 'text-normal';
+
+    fetchAPI('game/synth', 'POST', { recipe_name: recipeName })
+        .then(data => {
+            if (data.success) {
+                syncPlayerData(data.player);
+                resultLabel.textContent = data.message;
+                resultLabel.className = data.result === 'HQ' ? 'text-success' : data.result === 'BREAK' ? 'text-danger' : 'text-normal';
+                if (data.result !== 'BREAK') {
+                    // Refresh AH in case a synth item is now available to list
+                    syncMarket();
+                }
+            } else {
+                resultLabel.textContent = data.message;
+                resultLabel.className = 'text-danger';
+            }
+        });
+}
+
+// NEW FUNCTION: Handles the purchase directly from the listing button
+function handleQuickBuy(listingId, price) {
+    if (!player) return logMessage("ERROR: Must be logged in to buy.");
+    
+    if (player.gil < price) {
+        logMessage("ERROR: Insufficient Gil to complete purchase.");
+        return;
     }
 
+    // Find listing name for the log message
+    const listing = listings.find(l => l.id === listingId);
+    const itemDescription = listing ? `${listing.qty}x ${listing.item}` : 'item';
+    
+    logMessage(`Attempting to buy ${itemDescription}...`);
 
-    // =================================
-    // INITIALIZATION
-    // =================================
+    fetchAPI('ah/buy', 'POST', { listing_id: listingId })
+        .then(data => {
+            if (data.success) {
+                syncPlayerData(data.player);
+                logMessage(data.message);
+            } else {
+                logMessage(`ERROR: ${data.message}`);
+            }
+            // Always refresh market after a buy attempt to update UI
+            syncMarket();
+        });
+}
+// REMOVED: Old handleBuy() function, which relied on row selection
 
-    // Check auth status on page load
-    (async () => {
-        const response = await fetch('/api/game/sync');
-        const data = await response.json();
 
+// --- Listing Modal Logic (with x12 stacks) ---
+
+let currentItemMaxQty = 0;
+let currentItemBasePrice = 0;
+
+function openListingModal() {
+    if (!selectedInventoryItem) return;
+
+    currentItemMaxQty = player.inventory[selectedInventoryItem];
+    currentItemBasePrice = getBasePrice(selectedInventoryItem);
+
+    document.getElementById('listing-item-name').textContent = selectedInventoryItem;
+    document.getElementById('suggested-unit-price').textContent = formatGil(currentItemBasePrice);
+    document.getElementById('listing-status').textContent = '';
+    
+    const qtySelect = document.getElementById('listing-qty-select');
+    qtySelect.innerHTML = '';
+    
+    let allowedQtys = [1, 6, 12].filter(q => q <= currentItemMaxQty);
+    if (!allowedQtys.includes(currentItemMaxQty) && currentItemMaxQty > 0) {
+        allowedQtys.push(currentItemMaxQty);
+    }
+    allowedQtys.sort((a, b) => a - b);
+    
+    if (allowedQtys.length === 0) {
+        logMessage("ERROR: Cannot list an item you don't have.");
+        return;
+    }
+
+    allowedQtys.forEach(qty => {
+        const option = document.createElement('option');
+        option.value = qty;
+        option.textContent = qty;
+        qtySelect.appendChild(option);
+    });
+
+    // Default to the highest stack if possible, otherwise max qty
+    let defaultQty = 1;
+    if (currentItemMaxQty >= 12) defaultQty = 12;
+    else if (currentItemMaxQty >= 6) defaultQty = 6;
+    else defaultQty = currentItemMaxQty;
+    
+    qtySelect.value = defaultQty;
+    
+    // Set default price based on the initial quantity
+    document.getElementById('listing-price-input').value = currentItemBasePrice * defaultQty;
+
+    document.getElementById('listing-modal').style.display = 'block';
+}
+
+function closeListingModal() {
+    document.getElementById('listing-modal').style.display = 'none';
+}
+
+function updateListingPrice() {
+    const qty = parseInt(document.getElementById('listing-qty-select').value);
+    const priceInput = document.getElementById('listing-price-input');
+    // Auto-fill price based on suggested unit price and selected quantity
+    priceInput.value = currentItemBasePrice * qty;
+}
+
+function confirmListing() {
+    const item = selectedInventoryItem;
+    const qty = parseInt(document.getElementById('listing-qty-select').value);
+    const price = parseInt(document.getElementById('listing-price-input').value);
+    const status = document.getElementById('listing-status');
+
+    if (isNaN(price) || price <= 0 || isNaN(qty) || qty <= 0 || qty > currentItemMaxQty) {
+        status.textContent = 'Invalid price or quantity.';
+        status.style.color = 'var(--danger)';
+        return;
+    }
+
+    status.textContent = 'Listing...';
+    status.style.color = 'var(--text)';
+
+    fetchAPI('ah/list', 'POST', { 
+        item: item, 
+        price: price, 
+        qty: qty 
+    })
+    .then(data => {
         if (data.success) {
-            document.getElementById('authSection').style.display = 'none';
-            document.getElementById('gameSection').style.display = 'block';
-            document.getElementById('playerUsername').textContent = data.player.username;
-            player = data.player; // Re-sync will pull the full player data
-            await syncPlayerData();
+            logMessage(data.message);
+            syncAll(); // Resync player inventory and AH
+            closeListingModal();
         } else {
-            document.getElementById('authSection').style.display = 'block';
-            document.getElementById('gameSection').style.display = 'none';
-            setStatus("Please log in to play.", false);
+            status.textContent = data.message;
+            status.style.color = 'var(--danger)';
         }
-    })();
+    })
+    .catch(() => {
+        status.textContent = 'Network error. Could not list item.';
+        status.style.color = 'var(--danger)';
+    });
+}
+
+// Start the check when the page loads
+document.addEventListener('DOMContentLoaded', checkAuth);
+
 </script>
-
 </body>
 </html>
+```<ctrl63>
