@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bonecraft Sim (Cloud)</title>
     <style>
+        /* Reverted CSS to the simpler, "older" version's styling */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #333; color: #eee; margin: 0; padding: 20px; }
         .container { max-width: 1200px; margin: auto; background-color: #444; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
         h1, h2, h3 { color: #8af; border-bottom: 2px solid #555; padding-bottom: 5px; margin-top: 20px; }
@@ -23,13 +24,12 @@
         th, td { padding: 10px; border: 1px solid #666; text-align: left; }
         th { background-color: #777; color: #111; }
         td:nth-child(2), td:nth-child(3) { text-align: right; } /* Price and Qty columns */
-        .market-action { width: 100px; text-align: center; }
+        .market-action { width: 100px; text-align: center; } /* For the Buy button column */
 
         .recipe-list { max-height: 400px; overflow-y: auto; }
         .recipe-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dotted #666; }
         .recipe-details { flex-grow: 1; }
         .recipe-synth-button { margin-left: 10px; width: 80px; }
-
     </style>
 </head>
 <body>
@@ -218,7 +218,10 @@
         let html = '<ul>';
         for (const [item, qty] of Object.entries(player.inventory).sort()) {
             html += `<li>${item}: ${qty.toLocaleString()}</li>`;
-            listSelect.innerHTML += `<option value="${item}">${item} (${qty.toLocaleString()} available)</option>`;
+            // Only allow listing items the player actually has in inventory
+            if (qty > 0) {
+                listSelect.innerHTML += `<option value="${item}">${item} (${qty.toLocaleString()} available)</option>`;
+            }
         }
         html += '</ul>';
         inventoryDiv.innerHTML = html;
@@ -230,7 +233,8 @@
         
         for (const recipe of recipes.sort((a, b) => b.tier - a.tier)) {
             const hasMaterial = player.inventory[recipe.material] >= recipe.qty;
-            const canAfford = player.gil >= recipe.price * 0.1;
+            // Assuming 10% recipe price is the synth fee
+            const canAfford = player.gil >= recipe.price * 0.1; 
             
             const itemDiv = document.createElement('div');
             itemDiv.className = 'recipe-item';
@@ -305,7 +309,7 @@
                 <td>${listing.seller}</td>
                 <td class="market-action">
                     <button onclick="handleBuyItem('${listing.id}', ${listing.price})" 
-                            ${player && player.gil < listing.price ? 'disabled' : ''}>
+                            ${player && (player.gil < listing.price || listing.seller === player.username) ? 'disabled' : ''}>
                         Buy
                     </button>
                 </td>
@@ -313,7 +317,6 @@
         }
     }
 
-    // *** NEW FUNCTION TO HANDLE BUYING ***
     async function handleBuyItem(listingId, price) {
         if (!player) {
             setStatus("You must be logged in to buy items.", true);
@@ -342,7 +345,6 @@
             refreshMarket(); // Refresh market in case the item was sold to someone else
         }
     }
-    // ************************************
 
     async function handleListItem() {
         if (!player) return;
