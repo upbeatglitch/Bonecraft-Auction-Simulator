@@ -485,7 +485,7 @@ def run_economy_simulation():
     while True:
         try:
             # Bots list materials (30% chance every cycle)
-            if random.randint(1, 10000) <= 25:
+            if random.randint(1, 10000) <= 3000:
                 bot = random.choice(BOT_NAMES)
                 item_to_list = random.choice(BOT_LISTABLE_ITEMS)
                 
