@@ -14,7 +14,7 @@ from flask import Flask, jsonify, request, session, render_template
 
 # !!! IMPORTANT !!!
 # PASTE YOUR FIREBASE REALTIME DATABASE URL HERE
-FIREBASE_DB_URL = "https://bonecraftsim-default-rtdb.firebaseio.com/" 
+FIREBASE_DB_URL = "https://bcsynthsim-default-rtdb.firebaseio.com/" 
 # -----------------
 
 # Flask Setup
